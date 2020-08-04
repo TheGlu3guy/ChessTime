@@ -1,0 +1,27 @@
+body{
+    font-family: "Roboto Thin", sans-serif;
+}
+.container{
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+#plateau{
+    border-spacing: 0;
+    margin: auto;
+}
+#plateau td{
+    height: 60px;
+    width: 60px;
+}
+#plateau img{
+    height: 60px;
+    width: 60px;
+    border-radius: 50%;
+}
+#plateau .white{
+    background-color: #e8e8e8;
+}
+#plateau .black{
+    background-color: #232323;
+}
