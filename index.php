@@ -7,6 +7,7 @@
     <script src="chess.js"></script>
 </head>
 <body>
+    <h1>Chess Time Boys !</h1>
     <div class="container">
         <table id="plateau">
             <tbody>
@@ -14,11 +15,11 @@
                     echo("<tr>");
                     for($j=0 ; $j<8 ; $j++){
                         if(($j+$i)%2==0){
-                            echo("<td class='black'>");
+                            echo("<td class='not_active black hide'>");
                         }else {
-                            echo("<td class='white'>");
+                            echo("<td class='not_active white hide'>");
                         }
-                        echo("<img></td>");
+                        echo("<img class='hide'></td>");
                     }
                     echo("</tr>");
                 } ?>

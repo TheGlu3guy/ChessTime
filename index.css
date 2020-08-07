@@ -1,9 +1,14 @@
 body{
     font-family: "Roboto Thin", sans-serif;
 }
+h1{
+    width: 100%;
+    text-align: center;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
 .container{
     display: flex;
-    height: 100%;
     width: 100%;
 }
 #plateau{
@@ -19,9 +24,26 @@ body{
     width: 60px;
     border-radius: 50%;
 }
+#plateau .hide{
+    opacity: 0;
+    transition: opacity 1s ease-in-out,
+    background-color 0.25s ease-in-out;
+}
+#plateau .show{
+    opacity: 1;
+    transition: opacity 1s ease-in-out,
+    background-color 0.5s ease-in-out;
+}
+
 #plateau .white{
     background-color: #e8e8e8;
 }
 #plateau .black{
-    background-color: #232323;
+    background-color: #424242;
+}
+#plateau .active{
+    box-shadow: 0 0 20px black;
+    z-index: 1000;
+    position: relative;
+    transition: box-shadow 0.5s ease-in-out;
 }
