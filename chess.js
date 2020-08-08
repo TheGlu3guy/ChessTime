@@ -1,15 +1,253 @@
+var state_of_game;
 var last_cliked = null;
 var plateau;
+var plateau_de_jeu;
+var couleur;
+var tr;
 
+
+var highlight_checker = function (){
+    var checker;
+    if(plateau_de_jeu.couleur === 1){
+        checker = plateau_de_jeu.get_checker(1);
+    }else{
+        checker = plateau_de_jeu.get_checker(0);
+    }
+    console.log("voyons voir");
+    for(let i=0 ; i<checker.length ; i++){
+        tr[checker[i][0]][checker[i][1]].classList.replace('white', 'light_red');
+        tr[checker[i][0]][checker[i][1]].classList.replace('black', 'dark_red');
+        console.log(checker[i]);
+    }
+}
+
+var onFocus = false;
+var precedent_target = null;
+var show_case = function (target){
+    var x = target.parentNode.sectionRowIndex;
+    var y = target.cellIndex;
+    if(target.classList.contains('black')){
+        target.classList.replace("not_active","active_black");
+    }else{
+        target.classList.replace("not_active","active_white");
+    }
+    var cases_reachable = [];
+    if(couleur === 0){
+        cases_reachable = plateau_de_jeu.cases_reachable(7-x,7-y);
+    }else{
+        cases_reachable = plateau_de_jeu.cases_reachable(x,y);
+    }
+    for(let i=0 ; i<cases_reachable.length ; i++){
+        tr[cases_reachable[i].x][cases_reachable[i].y].classList.replace('black','dark_green');
+        tr[cases_reachable[i].x][cases_reachable[i].y].classList.replace('white','light_green');
+        tr[cases_reachable[i].x][cases_reachable[i].y].classList.add('dropzone');
+    }
+    return cases_reachable;
+}
+var hide_case = function (target) {
+    target.classList.replace("active_black","not_active");
+    target.classList.replace("active_white","not_active");
+    var x = target.parentNode.sectionRowIndex;
+    var y = target.cellIndex;
+
+    var cases_reachable = [];
+    if(couleur === 0){
+        cases_reachable = plateau_de_jeu.cases_reachable(7-x,7-y);
+    }else{
+        cases_reachable = plateau_de_jeu.cases_reachable(x,y);
+    }
+    if(cases_reachable !== null) {
+        for (let i = 0; i < cases_reachable.length; i++) {
+            tr[cases_reachable[i].x][cases_reachable[i].y].classList.replace('dark_green', 'black');
+            tr[cases_reachable[i].x][cases_reachable[i].y].classList.replace('light_green', 'white');
+            tr[cases_reachable[i].x][cases_reachable[i].y].classList.remove('dropzone');
+        }
+    }
+}
+var click_plateau = function (e){
+    var target;
+    if(e.target.nodeName === 'IMG'){
+        target = e.target.parentNode;
+    }else if(e.target.nodeName === 'TD'){
+        target = e.target;
+    }else{
+        console.log("error target not recongnized");
+        return false;
+    }
+
+    if(precedent_target === null){
+        precedent_target = target;
+        show_case(target);
+        onFocus = true;
+    }else if(precedent_target !== target){
+        if(target.classList.contains("dropzone")){
+            hide_case(precedent_target);
+            var x_start = precedent_target.parentNode.sectionRowIndex;
+            var y_start = precedent_target.cellIndex;
+            var x_final = target.parentNode.sectionRowIndex;
+            var y_final = target.cellIndex;
+            var return_code;
+            if(couleur === 0){
+                return_code = plateau_de_jeu.bouger_Piece(7-x_start, 7-y_start, 7-x_final, 7-y_final);
+            }else {
+                return_code = plateau_de_jeu.bouger_Piece(x_start, y_start, x_final, y_final);
+            }
+            if(return_code>=0){
+                target.removeChild(target.lastElementChild);
+                target.appendChild(precedent_target.lastElementChild);
+                precedent_target.innerHTML= "<img class='hide'  draggable='true' ondragstart='event.dataTransfer.setData(\"text/plain\",null)'>";
+                if(return_code === 2 || return_code === 3){
+                    highlight_checker();
+                    if(plateau_de_jeu.jeu_fini===1){
+                        console.log("echec et mat");
+                        state_of_game.innerText = "Échec et mat";
+                    }else if(plateau_de_jeu.jeu_fini ===2){
+                        console.log("égalité");
+                        state_of_game.innerText = "Égalité";
+                    }
+                }
+            }else if(return_code === -2){
+                state_of_game.innerText = "C'est pas ton tour !";
+            }
+            console.log(return_code);
+            precedent_target = null;
+        }else{
+            hide_case(precedent_target);
+            show_case(target);
+            precedent_target = target;
+            onFocus = true;
+        }
+    }else if(precedent_target === target){
+        if(onFocus){
+            hide_case(target);
+            onFocus = false;
+        }else{
+            show_case(target);
+            onFocus = true;
+        }
+    }else{
+        onFocus = true;
+    }
+}
+var drag_event_setup = function(){
+    //:: DRAGEVENTS ::
+    var x_drag;
+    var y_drag;
+    var dragged;
+    var dragged_parent;
+    var cases_reachable;
+    plateau.addEventListener("drag", function( e ) {
+    }, false);
+    plateau.addEventListener("dragstart", function( e ) {
+        dragged = e.target;
+        dragged_parent = e.target.parentNode;
+        if(dragged.nodeName !== "IMG" || dragged.src === ""){
+            e.preventDefault();
+            return false;
+        }
+        x_drag = dragged.parentNode.parentNode.sectionRowIndex;
+        y_drag = dragged.parentNode.cellIndex;
+        if(precedent_target !== null){
+            hide_case(precedent_target);
+        }
+        cases_reachable = show_case(dragged.parentNode);
+    }, false);
+    plateau.addEventListener("dragend", function( e ) {
+        hide_case(dragged_parent);
+        for (let i = 0; i < cases_reachable.length; i++) {
+            tr[cases_reachable[i].x][cases_reachable[i].y].classList.replace('dark_green', 'black');
+            tr[cases_reachable[i].x][cases_reachable[i].y].classList.replace('light_green', 'white');
+            tr[cases_reachable[i].x][cases_reachable[i].y].classList.remove('dropzone');
+        }
+    }, false);
+    plateau.addEventListener("dragover", function( e ) {
+        e.preventDefault();
+        var target;
+        if(e.target.tagName === 'IMG'){
+            target = e.target.parentNode;
+        }else if(e.target.tagName === 'TD'){
+            target = e.target;
+        }else{
+            console.log("error target dragenter not valid");
+            return false;
+        }
+        if (target.classList.contains("dropzone")) {
+            target.classList.replace('dark_green', 'dark_yellow');
+            target.classList.replace('light_green', 'light_yellow');
+        }
+    }, false);
+    plateau.addEventListener("dragenter", function( e ) {
+        var target;
+        if(e.target.tagName === 'IMG'){
+            target = e.target.parentNode;
+        }else if(e.target.tagName === 'TD'){
+            target = e.target;
+        }else{
+            console.log("error target dragenter not valid");
+            return false;
+        }
+        if (target.classList.contains("dropzone")) {
+            target.classList.replace('dark_green', 'dark_yellow');
+            target.classList.replace('light_green', 'light_yellow');
+        }
+    }, false);
+    plateau.addEventListener("dragleave", function( e ) {
+        var target;
+        if(e.target.tagName === 'IMG'){
+            target = e.target.parentNode;
+        }else if(e.target.tagName === 'TD'){
+            target = e.target;
+        }else{
+            console.log("error target dragenter not valid");
+            return false;
+        }
+        if (target.classList.contains("dropzone")) {
+            target.classList.replace('dark_yellow', 'dark_green');
+            target.classList.replace('light_yellow', 'light_green');
+        }
+    }, false);
+    plateau.addEventListener("drop", function( e ) {
+        e.preventDefault();
+        var target;
+        if(e.target.tagName === 'IMG'){
+            target = e.target.parentNode;
+        }else if(e.target.tagName === 'TD'){
+            target = e.target;
+        }else{
+            console.log("error target dragenter not valid");
+            return false;
+        }
+        if (target.classList.contains("dropzone")) {
+            var x_final = target.parentNode.sectionRowIndex;
+            var y_final = target.cellIndex;
+            var return_code;
+            if(couleur === 0){
+                return_code = plateau_de_jeu.bouger_Piece(7-x_drag, 7-y_drag, 7-x_final, 7-y_final);
+            }else {
+                return_code = plateau_de_jeu.bouger_Piece(x_drag, y_drag, x_final, y_final);
+            }
+            if(return_code>=0){
+                console.log("coup autorisé");
+                dragged.parentNode.innerHTML= "<img class='hide'  draggable='true' ondragstart='event.dataTransfer.setData(\"text/plain\",null)'>";
+                target.removeChild(target.lastElementChild);
+                target.appendChild(dragged);
+            }
+
+            target.classList.replace('dark_yellow', 'dark_green');
+            target.classList.replace('light_yellow', 'light_green');
+        }
+    }, false);
+}
 window.onload = function (){
-    var plateau_de_jeu = new Plateau();
+    state_of_game = document.getElementById("state_of_game");
+    plateau_de_jeu = new Plateau();
     plateau_de_jeu.init();
-    var couleur = 0;
+    couleur = 0;
 
     plateau = document.getElementById("plateau");
     var tbody = plateau.lastElementChild.children;
 
-    var tr = [];
+    tr = [];
     for(let i=0 ; i<8 ; i++){
         tr.push([]);
         for(let j=0 ; j<8 ; j++){
@@ -49,22 +287,14 @@ window.onload = function (){
             }
         }
     }
-    for(let i=0 ; i<8 ; i++){
-        for(let j=0 ; j<8 ; j++){
-            tr[i][j].addEventListener('click', function () {
-                if(this.state === null || this.state === 0){
-                    tr[i][j].classList.replace("not_active","active");
-                    this.state = 1;
-                }else{
-                    tr[i][j].classList.replace("active","not_active");
-                    this.state = 0;
-                }
-                console.log("test");
-            });
-        }
-    }
+    plateau.addEventListener('click',(e) => this.click_plateau(e), false);
+
+    this.drag_event_setup();
+
+
 }
 function Plateau(){
+    this.last_checker=[];
     this.tab_cases = [];
     this.roi_blanc = null;
     this.roi_noir = null;
@@ -97,9 +327,9 @@ function Plateau(){
         this.tab_cases[7][0].piece = new Tour(1, this.tab_cases[7][0]);
         this.tab_cases[7][1].piece = new Cavalier(1, this.tab_cases[7][1]);
         this.tab_cases[7][2].piece = new Fou(1, this.tab_cases[7][2]);
-        this.roi_noir = new Roi(1, this.tab_cases[7][4]);
-        this.tab_cases[7][4].piece = this.roi_noir;
-        this.tab_cases[7][3].piece = new Reine(1, this.tab_cases[7][3]);
+        this.roi_noir = new Roi(1, this.tab_cases[7][3]);
+        this.tab_cases[7][3].piece = this.roi_noir;
+        this.tab_cases[7][4].piece = new Reine(1, this.tab_cases[7][4]);
         this.tab_cases[7][5].piece = new Fou(1, this.tab_cases[7][5]);
         this.tab_cases[7][6].piece = new Cavalier(1, this.tab_cases[7][6]);
         this.tab_cases[7][7].piece = new Tour(1, this.tab_cases[7][7]);
@@ -131,12 +361,18 @@ function Plateau(){
         }
         return [];
     }
-    /*-1 = move impossible
+    /*-3 = pas de pièce à bouger
+    * -2 = pas le tour de la personne
+    * -1 = move demandé impossible pour la piece
     *  0 = move made
     *  1 = move made and killed a piece
     *  2 = move made and check
     *  3 = move made and check and killed a piece*/
     this.bouger_Piece = function (x, y, a, b){
+        if(x<0 || x>=8 || y<0 || y>=8 || a<0 || a>=8 || b<0 || b>=8){
+            console.log("out of bound");
+            return false;
+        }
         var return_code = -1;
         if(this.tab_cases[x][y].piece !== null){
             if(this.tab_cases[x][y].piece.couleur === this.couleur){
@@ -145,8 +381,10 @@ function Plateau(){
                     if(cases[i] === this.tab_cases[a][b]){
                         //c'est bon la cases est valable
                         if(this.tab_cases[a][b].piece === null){
+                            //personne à manger, déplacement simple
                             return_code = 0;
                         }else{
+                            //quelqu'un va se faire manger
                             return_code = 1;
                         }
                         this.tab_cases[a][b].piece = this.tab_cases[x][y].piece;
@@ -161,8 +399,10 @@ function Plateau(){
                         if(this.estEnEchec()){
                             this.plateau_en_echec = true;
                             if(return_code === 1){
+                                //quelqu'un a été mangé et on a mis l'ennemi en echec
                                 return_code = 3;
                             }else{
+                                //juste mise en echec de l'ennemi
                                 return_code = 2;
                             }
                         }else{
@@ -171,7 +411,13 @@ function Plateau(){
                         this.nouveau_coup();
                     }
                 }
+            }else{
+                //pas ton tour
+                return_code = -2;
             }
+        }else{
+            //pas de pièce à bouger sur la case de départ
+            return_code = -3;
         }
         return return_code;
     }
@@ -211,29 +457,31 @@ function Plateau(){
         }
     }
     this.estEnEchec = function (){
+        return this.get_checker(this.couleur).length > 0;
+    }
+    this.get_checker = function (couleur){
+        var checkers = [];
         for(let i=0 ; i<8 ; i++){
             for(let j=0 ; j<8 ; j++){
                 if(this.tab_cases[i][j].piece !== null){
                     if(this.tab_cases[i][j].piece.couleur !== this.couleur){
-                        console.log(this.tab_cases[i][j].piece.couleur);
                         var cases_reachable = this.tab_cases[i][j].piece.cases_reachable(this.tab_cases);
                         for(let k=0 ; k<cases_reachable.length ; k++){
-                            if(this.couleur === 0){
+                            if(couleur === 0){
                                 if(cases_reachable[k] === this.roi_blanc.la_case){
-                                    return true;
+                                    checkers.push([i,j]);
                                 }
                             }else{
                                 if(cases_reachable[k] === this.roi_noir.la_case){
-                                    return true;
+                                    checkers.push([i,j]);
                                 }
                             }
-
                         }
                     }
                 }
             }
         }
-        return false;
+        return checkers;
     }
 }
 function Tour(couleur, la_case){
@@ -253,6 +501,7 @@ function Tour(couleur, la_case){
             }else{
                 if(tab_cases[x-i][y].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x-i][y]);
+                    break;
                 }else {
                     break;
                 }
@@ -264,6 +513,7 @@ function Tour(couleur, la_case){
             }else{
                 if(tab_cases[x+i][y].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x+i][y]);
+                    break;
                 }else {
                     break;
                 }
@@ -275,6 +525,7 @@ function Tour(couleur, la_case){
             }else{
                 if(tab_cases[x][y-i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x][y-i]);
+                    break;
                 }else {
                     break;
                 }
@@ -286,6 +537,7 @@ function Tour(couleur, la_case){
             }else{
                 if(tab_cases[x][y+i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x][y+i]);
+                    break;
                 }else {
                     break;
                 }
@@ -383,6 +635,7 @@ function Fou(couleur, la_case){
             }else{
                 if(tab_cases[x-i][y-i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x-i][y-i]);
+                    break;
                 }else {
                     break;
                 }
@@ -394,6 +647,7 @@ function Fou(couleur, la_case){
             }else{
                 if(tab_cases[x+i][y+i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x+i][y+i]);
+                    break;
                 }else {
                     break;
                 }
@@ -405,6 +659,7 @@ function Fou(couleur, la_case){
             }else{
                 if(tab_cases[x+i][y-i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x+i][y-i]);
+                    break;
                 }else {
                     break;
                 }
@@ -416,6 +671,7 @@ function Fou(couleur, la_case){
             }else{
                 if(tab_cases[x-i][y+i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x-i][y+i]);
+                    break;
                 }else {
                     break;
                 }
@@ -443,6 +699,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x-i][y-i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x-i][y-i]);
+                    break;
                 }else {
                     break;
                 }
@@ -454,6 +711,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x+i][y+i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x+i][y+i]);
+                    break;
                 }else {
                     break;
                 }
@@ -465,6 +723,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x+i][y-i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x+i][y-i]);
+                    break;
                 }else {
                     break;
                 }
@@ -476,6 +735,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x-i][y+i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x-i][y+i]);
+                    break;
                 }else {
                     break;
                 }
@@ -487,6 +747,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x-i][y].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x-i][y]);
+                    break;
                 }else {
                     break;
                 }
@@ -498,6 +759,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x+i][y].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x+i][y]);
+                    break;
                 }else {
                     break;
                 }
@@ -509,6 +771,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x][y-i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x][y-i]);
+                    break;
                 }else {
                     break;
                 }
@@ -520,6 +783,7 @@ function Reine(couleur, la_case){
             }else{
                 if(tab_cases[x][y+i].piece.couleur !== this.couleur){
                     cases_reachable.push(tab_cases[x][y+i]);
+                    break;
                 }else {
                     break;
                 }
@@ -613,19 +877,18 @@ function Pion(couleur, la_case){
         var x = this.la_case.x;
         var y = this.la_case.y;
         if(this.couleur === 1){
-            if(!this.hasMoved){
-                if(x-2>=0){
-                    if(tab_cases[x-2][y].piece === null){
-                        cases_reachable.push(tab_cases[x-2][y]);
-                    }
-                }
-            }
             if(x-1>=0){
                 if(tab_cases[x-1][y].piece===null){
                     cases_reachable.push(tab_cases[x-1][y]);
+                    if(!this.hasMoved){
+                        if(x-2>=0){
+                            if(tab_cases[x-2][y].piece === null){
+                                cases_reachable.push(tab_cases[x-2][y]);
+                            }
+                        }
+                    }
                 }
             }
-
             if(x-1>=0 && y+1<8){
                 if(tab_cases[x-1][y+1].piece !== null) {
                     if (tab_cases[x - 1][y + 1].piece.couleur !== this.couleur) {
@@ -641,16 +904,16 @@ function Pion(couleur, la_case){
             }
         }
         if(this.couleur === 0){
-            if(!this.hasMoved){
-                if(x+2<8){
-                    if(tab_cases[x+2][y].piece === null){
-                        cases_reachable.push(tab_cases[x+2][y]);
-                    }
-                }
-            }
             if(x+1<8){
                 if(tab_cases[x+1][y].piece===null){
                     cases_reachable.push(tab_cases[x+1][y]);
+                    if(!this.hasMoved){
+                        if(x+2<8){
+                            if(tab_cases[x+2][y].piece === null){
+                                cases_reachable.push(tab_cases[x+2][y]);
+                            }
+                        }
+                    }
                 }
             }
 

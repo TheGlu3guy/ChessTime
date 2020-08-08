@@ -1,6 +1,10 @@
 body{
     font-family: "Roboto Thin", sans-serif;
 }
+h2{
+    text-align: center;
+    color: #ba4646;
+}
 h1{
     width: 100%;
     text-align: center;
@@ -18,6 +22,7 @@ h1{
 #plateau td{
     height: 60px;
     width: 60px;
+    position: relative;
 }
 #plateau img{
     height: 60px;
@@ -39,11 +44,40 @@ h1{
     background-color: #e8e8e8;
 }
 #plateau .black{
-    background-color: #424242;
+    background-color: #232323;
 }
-#plateau .active{
-    box-shadow: 0 0 20px black;
-    z-index: 1000;
-    position: relative;
-    transition: box-shadow 0.5s ease-in-out;
+#plateau .dark_green{
+    background-color: #5b8749;
+}
+#plateau .light_green{
+    background-color: #8dd472;
+}
+#plateau .dark_yellow{
+    background-color: #eaac41;
+}
+#plateau .light_yellow{
+    background-color: #ead141;
+}
+#plateau .dark_red{
+    background-color: #8d2727;
+}
+#plateau .light_red{
+    background-color: #e74242;
+}
+#plateau .active_white{
+    box-shadow: 0 0 20px #1f1f1f inset;
+    z-index: 2;
+    transition: box-shadow 0.25s ease-in-out;
+}
+#plateau .active_black{
+    box-shadow: 0 0 30px black;
+    z-index: 2;
+    transition: box-shadow 0.25s ease-in-out;
+}
+#plateau .not_active{
+    box-shadow: none;
+    z-index: 0;
+    transition: opacity 1s ease-in-out,
+    background-color 0.5s ease-in-out,
+    box-shadow 0.25s ease-in-out, z-index 0s 0.25s;
 }

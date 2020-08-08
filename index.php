@@ -19,12 +19,14 @@
                         }else {
                             echo("<td class='not_active white hide'>");
                         }
-                        echo("<img class='hide'></td>");
+                        echo("<img class='hide'  draggable='true' ondragstart='event.dataTransfer.setData(\"text/plain\",null)'></td>");
                     }
                     echo("</tr>");
                 } ?>
             </tbody>
         </table>
-    <div>
+    </div>
+
+    <h2 id="state_of_game"></h2>
 </body>
 </html>
